@@ -1,0 +1,410 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prashant AI Assistant</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #101827;
+    color: white;
+    height: 100vh;
+    display: flex;
+}
+
+.sidebar {
+    width: 260px;
+    background: #080f1d;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    font-size: 23px;
+    font-weight: bold;
+    color: #38bdf8;
+    margin-bottom: 25px;
+}
+
+.new-chat, .clear-chat {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #172338;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+.new-chat:hover, .clear-chat:hover {
+    background: #263c5a;
+}
+
+.sidebar p {
+    color: #94a3b8;
+    font-size: 13px;
+    margin-top: auto;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+header {
+    padding: 20px;
+    border-bottom: 1px solid #29364b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h2 {
+    color: #38bdf8;
+}
+
+.status {
+    color: #4ade80;
+    font-size: 13px;
+}
+
+#chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.welcome {
+    margin: auto;
+    text-align: center;
+    color: #cbd5e1;
+}
+
+.welcome h1 {
+    color: #38bdf8;
+    margin-bottom: 15px;
+    font-size: 34px;
+}
+
+.message {
+    padding: 15px 18px;
+    border-radius: 15px;
+    max-width: 80%;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.user {
+    background: #075985;
+    align-self: flex-end;
+}
+
+.bot {
+    background: #1e293b;
+    align-self: flex-start;
+}
+
+.input-area {
+    padding: 20px;
+    background: #101827;
+    border-top: 1px solid #29364b;
+}
+
+.api-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.api-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 9px;
+    background: #1e293b;
+    color: white;
+    border: 1px solid #475569;
+}
+
+.input-box {
+    display: flex;
+    gap: 10px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+.input-box textarea {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    max-height: 120px;
+}
+
+button {
+    cursor: pointer;
+}
+
+.send {
+    background: #0284c7;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+}
+
+.send:hover {
+    background: #0369a1;
+}
+
+#status {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+@media(max-width:650px) {
+    .sidebar {
+        display: none;
+    }
+
+    #chat {
+        padding: 15px;
+    }
+
+    .message {
+        max-width: 95%;
+    }
+
+    header {
+        padding: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="logo">🤖 Prashant AI</div>
+
+    <button class="new-chat" onclick="newChat()">
+        + New Chat
+    </button>
+
+    <button class="clear-chat" onclick="clearChat()">
+        🗑 Clear Chat
+    </button>
+
+    <p>Powered by Groq AI</p>
+</aside>
+
+<main class="main">
+
+<header>
+    <h2>Prashant AI Assistant</h2>
+    <span class="status">● AI Assistant</span>
+</header>
+
+<div id="chat">
+    <div class="welcome" id="welcome">
+        <h1>नमस्ते प्रशांत! 👋</h1>
+        <p>मैं आपका AI Assistant हूँ।</p>
+        <p>मुझसे कुछ भी पूछ सकते हैं।</p>
+    </div>
+</div>
+
+<div class="input-area">
+
+    <div class="api-row">
+        <input
+            type="password"
+            id="apiKey"
+            placeholder="अपनी Groq API Key डालें"
+        >
+    </div>
+
+    <div class="input-box">
+        <textarea
+            id="userInput"
+            placeholder="यहाँ अपना सवाल लिखें..."
+            rows="1"
+        ></textarea>
+
+        <button class="send" id="sendBtn" onclick="sendMessage()">
+            ➤
+        </button>
+    </div>
+
+    <p id="status">अपनी API Key डालकर बातचीत शुरू करें।</p>
+
+</div>
+</main>
+
+<script>
+const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
+
+let messages = [];
+
+const chat = document.getElementById("chat");
+const input = document.getElementById("userInput");
+const statusText = document.getElementById("status");
+const sendBtn = document.getElementById("sendBtn");
+
+function addMessage(text, type) {
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "message " + type;
+    div.textContent = text;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+
+    return div;
+}
+
+async function sendMessage() {
+
+    const text = input.value.trim();
+    const apiKey = document.getElementById("apiKey").value.trim();
+
+    if (!text) return;
+
+    if (!apiKey) {
+        alert("कृपया अपनी Groq API Key डालें।");
+        return;
+    }
+
+    addMessage(text, "user");
+
+    messages.push({
+        role: "user",
+        content: text
+    });
+
+    input.value = "";
+    input.style.height = "auto";
+
+    sendBtn.disabled = true;
+    statusText.textContent = "AI जवाब तैयार कर रहा है...";
+
+    const loading = addMessage("सोच रहा हूँ...", "bot");
+
+    try {
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + apiKey
+            },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are Prashant AI Assistant. Answer helpfully in the same language as the user. Use simple Hindi when appropriate."
+                    },
+                    ...messages
+                ],
+                temperature: 0.7,
+                max_tokens: 1500
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error?.message || "API request failed: " + response.status
+            );
+        }
+
+        const answer = data.choices?.[0]?.message?.content;
+
+        if (!answer) {
+            throw new Error("AI से कोई जवाब नहीं मिला।");
+        }
+
+        messages.push({
+            role: "assistant",
+            content: answer
+        });
+
+        loading.textContent = answer;
+        statusText.textContent = "● Connected";
+
+    } catch (error) {
+
+        loading.textContent = "Error: " + error.message;
+        statusText.textContent = "कनेक्शन में समस्या हुई।";
+
+        messages.pop();
+
+    } finally {
+
+        sendBtn.disabled = false;
+        input.focus();
+        chat.scrollTop = chat.scrollHeight;
+
+    }
+}
+
+function newChat() {
+    messages = [];
+    chat.innerHTML = `
+        <div class="welcome" id="welcome">
+            <h1>नमस्ते प्रशांत! 👋</h1>
+            <p>मैं आपका AI Assistant हूँ।</p>
+            <p>मुझसे कुछ भी पूछ सकते हैं।</p>
+        </div>
+    `;
+    statusText.textContent = "New chat started.";
+}
+
+function clearChat() {
+    newChat();
+}
+
+input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+input.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = this.scrollHeight + "px";
+});
+</script>
+
+</body>
+</html>
